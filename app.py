@@ -1,10 +1,16 @@
-from flask import Flask, render_template
+import os
+from flask import Flask, render_template, send_from_directory
 
 app = Flask(__name__)
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route('/image/<path:filename>')
+def serve_image(filename):
+    image_dir = os.path.join(os.path.dirname(__file__), 'image')
+    return send_from_directory(image_dir, filename)
 
 
 if __name__ == "__main__":

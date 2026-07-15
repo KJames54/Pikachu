@@ -10,6 +10,14 @@ const NET_WIDTH = 10;
 const NET_HEIGHT = 190;
 const NET_X = (GAME_WIDTH - NET_WIDTH) / 2;
 const NET_Y = FLOOR_Y - NET_HEIGHT;
+const PLAYER_SCALE = 1.2;
+const BALL_SCALE = 1.5;
+
+const ballImage = new Image();
+ballImage.src = '/image/Ball.png';
+
+const playerImage = new Image();
+playerImage.src = '/image/Raichue.png';
 
 const state = {
   mode: 'menu',
@@ -25,8 +33,8 @@ const state = {
 };
 
 function createPlayer(side) {
-  const width = 40;
-  const height = 60;
+  const width = 40 * PLAYER_SCALE;
+  const height = 60 * PLAYER_SCALE;
   return {
     side,
     x: side === 'left' ? 120 : GAME_WIDTH - 120 - width,
@@ -40,7 +48,8 @@ function createPlayer(side) {
     legTimer: 0,
     dashCooldown: 0,
     dashTimer: 0,
-    dashVx: 0
+    dashVx: 0,
+    facing: side === 'left' ? 'right' : 'left'
   };
 }
 
@@ -48,7 +57,7 @@ function createBall() {
   return {
     x: GAME_WIDTH / 2,
     y: 100,
-    radius: 16,
+    radius: 16 * BALL_SCALE,
     vx: 5.6,
     vy: 0,
     stuckNet: false
@@ -115,6 +124,14 @@ function updatePlayer(player) {
   }
 
   const moveDirection = rightPressed && !leftPressed ? 1 : leftPressed && !rightPressed ? -1 : 0;
+
+  if (moveDirection !== 0) {
+    player.facing = moveDirection > 0 ? 'right' : 'left';
+  } else if (player.side === 'left') {
+    player.facing = 'right';
+  } else {
+    player.facing = 'left';
+  }
 
   if (player.dashCooldown <= 0 && dashKey && moveDirection !== 0) {
     player.dashTimer = 6;
@@ -195,13 +212,13 @@ function getClosestPointOnCircle(ball, center, radius) {
 }
 
 function getPlayerContactPoint(player, ball) {
-  const headCenter = { x: player.x + player.width / 2, y: player.y + 16 };
-  const headRadius = 22;
+  const headCenter = { x: player.x + player.width / 2, y: player.y + player.height * 0.28 };
+  const headRadius = Math.max(18, player.width * 0.55);
   const bodyRect = {
-    x: player.x + 6,
-    y: player.y + 16,
-    width: player.width - 12,
-    height: player.height - 20
+    x: player.x + player.width * 0.15,
+    y: player.y + player.height * 0.28,
+    width: player.width * 0.7,
+    height: player.height * 0.6
   };
 
   const headPoint = getClosestPointOnCircle(ball, headCenter, headRadius);
@@ -345,28 +362,45 @@ function drawNet() {
 
 function drawPlayer(player) {
   ctx.save();
-  ctx.translate(player.x, player.y);
-  ctx.fillStyle = player.side === 'left' ? '#f59e0b' : '#3b82f6';
-  ctx.fillRect(0, 0, player.width, player.height);
+  const isMovingLeft = player.vx < -0.1;
+  const isMovingRight = player.vx > 0.1;
+  const shouldFlip = player.side === 'left' ? !isMovingRight : isMovingLeft;
+  const drawX = shouldFlip ? player.x + player.width : player.x;
+  const scaleX = shouldFlip ? -1 : 1;
 
-  ctx.fillStyle = '#111827';
-  const legOffset = player.legFrame === 0 ? 4 : -4;
-  ctx.fillRect(8, player.height - 10, 8, 18);
-  ctx.fillRect(player.width - 16, player.height - 10, 8, 18 + legOffset);
-  ctx.fillRect(8 + legOffset, player.height - 10, 8, 18 - legOffset);
-  ctx.fillRect(player.width - 16 - legOffset, player.height - 10, 8, 18 + legOffset);
+  ctx.translate(drawX, player.y);
+  ctx.scale(scaleX, 1);
+
+  if (playerImage.complete && playerImage.naturalWidth) {
+    const imageWidth = player.width;
+    const imageHeight = player.height;
+    ctx.drawImage(playerImage, 0, 0, imageWidth, imageHeight);
+  } else {
+    ctx.fillStyle = player.side === 'left' ? '#f59e0b' : '#3b82f6';
+    ctx.fillRect(0, 0, player.width, player.height);
+    ctx.fillStyle = '#111827';
+    const legOffset = player.legFrame === 0 ? 4 : -4;
+    ctx.fillRect(8, player.height - 10, 8, 18);
+    ctx.fillRect(player.width - 16, player.height - 10, 8, 18 + legOffset);
+    ctx.fillRect(8 + legOffset, player.height - 10, 8, 18 - legOffset);
+    ctx.fillRect(player.width - 16 - legOffset, player.height - 10, 8, 18 + legOffset);
+  }
   ctx.restore();
 }
 
 function drawBall() {
   const ball = state.ball;
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-  ctx.fillStyle = '#fef3c7';
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = '#92400e';
-  ctx.stroke();
+  if (ballImage.complete && ballImage.naturalWidth) {
+    ctx.drawImage(ballImage, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
+  } else {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#fef3c7';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#92400e';
+    ctx.stroke();
+  }
 }
 
 function drawScore() {
