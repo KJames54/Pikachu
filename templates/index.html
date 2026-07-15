@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>피카츄 배구</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="game-shell">
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+    <div id="menuOverlay" class="overlay">
+      <h1>피카츄 배구</h1>
+      <p>1P: ← → ↑ / Enter</p>
+      <p>2P: A D W / Z</p>
+      <button id="startButton">게임 시작</button>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='game.js') }}"></script>
+</body>
+</html>
